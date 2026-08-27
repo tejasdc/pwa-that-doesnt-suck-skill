@@ -1,0 +1,61 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "{{PROJECT_NAME}}",
+  "main": "src/worker.ts",
+  // compatibility_date: bump this to the current date you tested against.
+  // Do NOT copy a stale date from a template — it pins your runtime to old
+  // semantics. Run `wrangler dev` today, note the date it prints, use that.
+  "compatibility_date": "{{YYYY-MM-DD_TESTED_TODAY}}",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // `true` means every request enters the worker first — required so the
+    // worker can override Cache-Control headers on HTML / manifest / sw.js
+    // (Workers Assets otherwise serves everything with max-age=0,
+    // must-revalidate, which iOS Safari heuristically caches longer than
+    // the browser should, stranding phones on stale deploys).
+    "run_worker_first": true
+  },
+  "vars": {
+    // APP_NAME is what iOS Safari shows in the passkey creation dialog
+    // ("Sign in to {{APP_NAME}}?"). If empty, iOS shows the domain, which
+    // looks broken. Read on the server side, never expose to the client.
+    "APP_NAME": "{{APP_NAME}}",
+    // Public VAPID key for Web Push subscribe(). Private key MUST be
+    // wrangler secret, never in this file.
+    // Generate: node scripts/generate-vapid.mjs
+    "VAPID_PUBLIC_KEY": "{{VAPID_PUBLIC_KEY_HERE}}"
+  },
+  "durable_objects": {
+    "bindings": [
+      // AppDO — account-scoped writer (accounts, friendships, invitations,
+      // schedules, subscription list, sessions). Storage is a single JSON
+      // blob keyed "db" for small-app simplicity; switch to key-per-entity
+      // when the blob grows past ~1 MB.
+      { "name": "APP_DO", "class_name": "AppDO" },
+      // {{ENTITY_DO}} — per-entity writer for the primary domain object
+      // (game / document / session). One DO per entity id.
+      { "name": "ENTITY_DO", "class_name": "EntityDO" }
+    ]
+  },
+  "migrations": [
+    // new_sqlite_classes (NOT new_classes) gives you the SQLite-backed DO
+    // storage tier. Do this from the start — it's not a free migration
+    // later.
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["AppDO", "EntityDO"]
+    }
+  ]
+  // Add these bindings once required:
+  //
+  // "kv_namespaces": [
+  //   { "binding": "KV_CACHE", "id": "{{KV_ID}}" }
+  // ],
+  //
+  // "queues": {
+  //   "producers": [{ "binding": "PUSH_QUEUE", "queue": "push" }]
+  // }
+}

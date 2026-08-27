@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover makes iOS notch / home-indicator safe-area
+         insets available to CSS via env(safe-area-inset-*). Required for
+         any full-bleed layout on iPhone. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- theme-color: iOS Safari uses this for the URL-bar tint in
+         standalone mode; Android uses it for the address-bar background.
+         Set to your primary surface color, not brand accent. -->
+    <meta name="theme-color" content="{{PRIMARY_SURFACE_HEX}}" />
+
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- SVG icon for browser tabs. iOS Safari IGNORES SVG for the
+         home-screen icon and needs a PNG (apple-touch-icon below). -->
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Fonts. IBM Plex Mono + Sans as a defensible mono-forward default;
+         swap for the project's actual family. Preconnect saves ~200ms on
+         first paint. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    />
+
+    <!--
+      Document title vs in-app wordmark split: the URL carries the app's
+      identity name; the <title> and share metadata should describe WHAT
+      this is. So the tab title / hover text / share card title says what
+      the app does, while the in-app wordmark and the home-screen install
+      label (manifest name/short_name) stay as the identity.
+    -->
+    <title>{{WHAT_THE_APP_IS}}</title>
+    <meta name="description" content="{{ONE_LINE_PRODUCT_DESCRIPTION}}" />
+    <meta property="og:title" content="{{WHAT_THE_APP_IS}}" />
+    <meta property="og:description" content="{{ONE_LINE_PRODUCT_DESCRIPTION}}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://{{CANONICAL_DOMAIN}}/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="{{WHAT_THE_APP_IS}}" />
+    <meta name="twitter:description" content="{{ONE_LINE_PRODUCT_DESCRIPTION}}" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!--
+      Origin-aware Cloudflare Web Analytics beacon. One worker can serve
+      multiple canonical domains, each with its own Web Analytics property.
+      Pick the token at runtime so each origin reports to its own property.
+      The beacon script reads data-cf-beacon on load, so dynamic injection
+      works.
+
+      REPLACE the tokens below with your actual Cloudflare Web Analytics
+      site tokens (one per canonical domain). Do NOT commit the tokens if
+      the repo is public — they're not secrets, but they're identifying.
+    -->
+    <script>
+      (function () {
+        var host = location.hostname;
+        var token = host === "{{CANONICAL_DOMAIN}}" || host.endsWith(".{{CANONICAL_DOMAIN}}")
+          ? "{{CANONICAL_TOKEN}}"
+          : "{{FALLBACK_TOKEN}}";
+        var s = document.createElement("script");
+        s.defer = true;
+        s.src = "https://static.cloudflareinsights.com/beacon.min.js";
+        s.setAttribute("data-cf-beacon", JSON.stringify({ token: token }));
+        document.head.appendChild(s);
+      })();
+    </script>
+  </body>
+</html>
