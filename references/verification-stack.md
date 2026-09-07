@@ -1,6 +1,8 @@
 # Verification stack
 
-*Load before writing tests, running a matrix, or shipping. This is the answer to "why did we ship broken things." Every layer below is a shipping gate; skipping one is how a specific class of bug reaches the user.*
+*Load before writing tests, running a matrix, or shipping. Select the layers that match the execution host and approved acceptance scope; the optional laptop Simulator layer is not a Linux shipping gate.*
+
+The global host-specific browser policy is authoritative. On Linux, use `browser-verification` for Chromium and WebKit at mobile and desktop sizes. Native iPhone Safari is not required. The Simulator recipe below is only for optional Safari-focused work on the laptop. Source: Tejas's 2026-09-07 policy clarification after Linux agents repeatedly treated unavailable Apple tools as incomplete verification.
 
 ## The stack (top of pyramid to bottom)
 
@@ -12,7 +14,7 @@ Each layer catches a class of bug the layer below cannot see. Run them in order.
 | 2. Push-policy verifier | Notification/UX rules encoded in code (e.g. "no re-engagement pushes ever") | Pre-commit |
 | 3. Adversity suite | Lifecycle transitions under hostile conditions — dead sockets, hidden tabs, network dropout, throttled CPU, rapid double-tap, no-scroll invariants | Pre-commit + CI |
 | 4. Visual matrix (headless) | Every surface × every state × every viewport as PNG. Data-seeded so states that only exist with data still get captured. Overlap guard in the same pass. | Pre-deploy |
-| 5. iOS Simulator matrix (real WebKit) | The class of bug headless Chromium is structurally blind to: `100dvh` vs `100svh`, flex intrinsic-min-content on shared parents, `aspect-ratio` compounding, mobile Safari URL-bar height eating the viewport | Pre-deploy |
+| 5. Optional laptop iOS Simulator matrix | Safari browser chrome and OS-dependent viewport behavior | Only for Safari-focused laptop testing in scope |
 | 6. Contact-sheet human eyeball | Anything the machine can render but not judge — hierarchy, weight, rhythm, copy at zoom | Pre-deploy, MANDATORY |
 | 7. Requirements ledger review | Regressions on stated invariants ("must not scroll on iPhone", "no toast during gameplay") | Pre-deploy |
 | 8. Live-production probe | Post-deploy: `/api/health`, asset hashes served, beacon count, the specific feature exercised on production URL | Immediately after deploy |
@@ -22,7 +24,7 @@ Each layer catches a class of bug the layer below cannot see. Run them in order.
 Each layer was added because something below it failed in a way the layer above catches:
 
 - Layer 4 (matrix) was added after a schedule form shipped with the Time field crushed under the Repeat dropdown at desktop widths. Nobody had opened the desktop schedule dialog. Rule: **a state that requires data to exist must still have a UI treatment for the data-present case tested.**
-- Layer 5 (simulator) was added after an inspirations page overflowed on the real phone that headless viewports could not see. Headless reports the full 844/932/900 usable height; mobile Safari's URL bar + toolbar consume ~120-190px. `100dvh` math that passes headless overflows on device. Rule: **any no-scroll surface must be verified with browser chrome present.**
+- Layer 5 (simulator) originated in a laptop investigation of an inspirations page that overflowed with Safari's browser chrome present. It remains useful for that specific acceptance scope. On Linux, verify no-scroll requirements at representative and short viewports in Chromium and WebKit; do not turn the historical Simulator recipe into a native-device prerequisite.
 - The overlap guard was added after the same schedule-form incident. It walks the same surfaces and asserts NO two visible labeled controls (input/select/button/textarea/label) have intersecting bounding boxes at any viewport. Catches states nobody thought to eyeball.
 - The **data-seeded matrix cells** rule was added after a `WaitingRow` shipped mangled ("Waiting for @raz" wrapped into three centered lines with the arrow orphaned and Withdraw marooned mid-row) because the matrix covered UI states like disclosure/menu open but no cell existed for the DATA state "dashboard with pending outgoing challenge". Rule: **the matrix seeds the data the state needs, then screenshots the result. A state with no cell is a state nobody has ever looked at.**
 
@@ -36,7 +38,7 @@ Categories to structure by:
 - Auth / onboarding
 - Notifications policy
 - Infra (canonical domain, beacon, cache headers, deploy verifications)
-- Process law (the meta-rules — matrix ship gate, simulator-as-truth, overlap guard, look-at-your-own-screenshots)
+- Process law (the meta-rules — matrix ship gate, host-specific browser scope, overlap guard, look-at-your-own-screenshots)
 
 See `templates/requirements-ledger.md` for the drop-in shape.
 
@@ -51,7 +53,7 @@ Load `templates/visual-matrix.mjs`. Structure:
 - **Cell POV escape hatch** — a cell function can return an alternate `Page` when the state naturally lives on someone else's page (incoming challenge on bob, zero-friends on the empty user). The runner screenshots the returned page instead of the default.
 - **Overlap collector** — after each screenshot, `page.evaluate` walks all `input/select/button/textarea/label`, filters ancestor-of-other pairs and modal-vs-page pairs, and reports any AABB intersection ≥ 3px in both dimensions.
 - **HTML contact sheet per viewport** — labeled mosaic loading the shots, three-color status (ok / warn / fail) based on overlap count.
-- **iOS Simulator pass** — for URL-reachable states only (landing, inspirations, marketing pages). Uses `xcrun simctl boot <UDID>`, `xcrun simctl openurl <UDID> <url>`, `xcrun simctl io <UDID> screenshot`. Contact sheet is a separate HTML.
+- **Optional laptop iOS Simulator pass** — enabled only on macOS with configured UDIDs for Safari-focused testing. For URL-reachable states only (landing, inspirations, marketing pages). Uses `xcrun simctl boot <UDID>`, `xcrun simctl openurl <UDID> <url>`, `xcrun simctl io <UDID> screenshot`. Contact sheet is a separate HTML.
 
 Cells to include AT MINIMUM for a friends-driven PWA:
 - Unauth: landing / rest, landing / interactive-selected, landing / mid-transition, marketing sub-pages.
@@ -97,9 +99,9 @@ Pattern (from the reference project):
 
 For a recurring schedule (weekly / daily): the test creates the schedule with `nextFireAt` a week in the past, ticks once, asserts (a) exactly one new game was created, (b) `nextFireAt` advanced by exactly one interval, (c) new `nextFireAt` is strictly in the future. Catches both double-fire and never-advance regressions.
 
-## Simulator recipe — the phone-truth pass
+## Optional laptop Simulator recipe
 
-Requirements: Xcode installed, an iOS Simulator device booted (or bootable) with a stable UDID.
+Use only when Safari-focused laptop testing is in scope. Requirements: macOS, Xcode installed, an iOS Simulator device booted (or bootable) with a stable UDID. Leave `SIMULATOR_UDIDS` empty otherwise; Linux verification does not use this recipe.
 
 ```bash
 # Find the UDID once and pin it in a constant.
@@ -124,7 +126,7 @@ for (const st of URL_STATES) {
 
 **First-run popup dismissal** — the very first `simctl openurl` on a fresh Simulator may show a "Would you like to allow…" dialog. Dismiss it manually once with `xcrun simctl ui <UDID> …` or the GUI; the matrix pass assumes a warm Simulator.
 
-**Only URL-reachable states go to the Simulator.** Deep interactive states (menu open, form open, mid-transition) stay headless. Simulator is for the truth pass on landing / marketing / auth surfaces where mobile Safari chrome matters.
+**Only URL-reachable states go to this Simulator recipe.** Deep interactive states (menu open, form open, mid-transition) stay in the scripted browser matrix. The optional laptop pass captures landing / marketing / auth surfaces where Safari browser chrome is the subject of the check.
 
 ## Selector / API drift audit — kill fossil tests after every UX rewrite
 

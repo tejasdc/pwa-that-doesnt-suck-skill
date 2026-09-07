@@ -27,7 +27,7 @@ Every scenario that doesn't apply to your app: DELETE it (do not leave the throw
 - [ ] Every CELL in the CELLS array corresponds to a state described in `docs/state-machines.md` — including data-dependent cells. If a state exists in the doc but has no cell, add one.
 - [ ] Delete the reference cells for lifecycles your app doesn't have (invitations, friendships) and replace with your app's actual lifecycles.
 - [ ] Each cell declares `seed(ctx)` and `cleanup(ctx)` — the reference file has ordered cell arrays that clean up implicitly by ordering; if your app has independent data states, prefer explicit seed/cleanup contracts (see the "matrix state isolation" section of `verification-stack.md`).
-- [ ] `SIMULATOR_UDIDS` populated with at least one real iPhone Simulator UDID. Find with `xcrun simctl list devices | grep 'iPhone'`.
+- [ ] Leave `SIMULATOR_UDIDS` empty for normal Linux verification. Populate it only for optional Safari-focused laptop testing with installed Xcode; find the laptop's UDID with `xcrun simctl list devices | grep 'iPhone'`.
 
 ## `templates/requirements-ledger.md`
 

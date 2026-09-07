@@ -54,8 +54,8 @@ stability (foundational invariants first, tweaks last).
 - [ ] Every deploy verified live: health, beacon, asset hashes, and the specific feature probed on production.
 
 ## Process law
-- [ ] VISUAL MATRIX SHIP GATE. Before EVERY deploy, run `node scripts/visual-matrix.mjs` and OPEN the contact-sheet HTML for each viewport (390, 430, 1440) AND the iOS Simulator contact sheet. Look at every cell. Deploy is blocked until every cell has been eyeballed.
-- [ ] SIMULATOR-AS-TRUTH. Mobile Safari's URL bar + toolbar consume ~120-190px on device, so `100dvh` math that passes headless overflows on the real phone. Mobile cells MUST be captured on the iOS Simulator (`xcrun simctl openurl` + `xcrun simctl io screenshot`) in addition to headless. Any no-scroll surface must be verified with browser chrome present.
+- [ ] VISUAL MATRIX SHIP GATE. Before EVERY deploy, run `node scripts/visual-matrix.mjs` and OPEN the contact-sheet HTML for each viewport (390, 430, 1440). Look at every cell. Include the Simulator contact sheet only when optional Safari-focused laptop testing is in scope.
+- [ ] HOST-SPECIFIC BROWSER COVERAGE. Follow the global browser policy: Linux Chromium and WebKit at phone and desktop sizes, including short viewports for no-scroll surfaces. Native iPhone Safari is not required. Simulator/browser-chrome checks belong only to optional Safari-focused laptop testing.
 - [ ] PROGRAMMATIC OVERLAP GUARD. The `no element overlap` adversity test asserts NO two visible labeled controls (input/select/button/textarea/label) have intersecting bounding boxes at any viewport. Must be green before every deploy.
 - [ ] DATA-DEPENDENT STATES ARE MATRIX CELLS. Every state a user can be in must have a matrix cell. Data-dependent states seed the data via the API and screenshot the resulting UI. A state with no cell is a state nobody has ever looked at.
 - [ ] Every visual-change agent LOOKS at its own rendered output (screenshots, at the sizes users see, at zoom where detail matters) BEFORE presenting.

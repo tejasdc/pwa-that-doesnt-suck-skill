@@ -20,10 +20,8 @@
 // when data exists is a state nobody looks at unless the matrix creates
 // the data. Data-dependent cells seed the data via the API.
 //
-// Also runs an iOS Simulator pass for URL-reachable surfaces — mobile
-// Safari with real browser chrome catches the class of bug headless
-// Chromium is structurally blind to (`100dvh` overflow, aspect-ratio
-// compounding, flex intrinsic-min-content on shared parents).
+// Optional Safari-focused laptop testing can add an iOS Simulator pass
+// for URL-reachable surfaces. Linux runs do not require native Apple tools.
 //
 // Requires a local wrangler dev server on http://localhost:8787.
 //
@@ -41,11 +39,12 @@ const execFileP = promisify(execFile);
 const BASE = "http://localhost:8787";
 const OUT_ROOT = "tmp/visual-matrix";
 
-// Pin your iOS Simulator UDID(s) here. Find with:
+// Leave empty unless Safari-focused laptop testing is in scope. On macOS:
 //   xcrun simctl list devices | grep 'iPhone'
 const SIMULATOR_UDIDS = [
   // "{{YOUR_IPHONE_UDID}}", // e.g. "3C3CF59F-CC82-47B0-A139-0F14D6AF6165"
 ];
+const runLaptopSafari = process.platform === "darwin" && SIMULATOR_UDIDS.length > 0;
 
 const VIEWPORTS = [
   { name: "390x844", width: 390, height: 844 },   // iPhone 14 Pro
@@ -428,15 +427,17 @@ async function main() {
   } finally {
     await browser.close();
   }
-  console.log(`\n[matrix] simulator (real WebKit)`);
-  try {
-    await runSimulator();
-  } catch (e) {
-    console.log(`  [warn] simulator pass failed: ${String(e).slice(0, 200)}`);
+  if (runLaptopSafari) {
+    console.log(`\n[matrix] laptop simulator (WebKit)`);
+    try {
+      await runSimulator();
+    } catch (e) {
+      console.log(`  [warn] simulator pass failed: ${String(e).slice(0, 200)}`);
+    }
   }
   console.log(`\n[matrix] done. Contact sheets:`);
   for (const v of VIEWPORTS) console.log(`  file://${process.cwd()}/${OUT_ROOT}/${v.name}/contact-sheet.html`);
-  if (SIMULATOR_UDIDS.length > 0) console.log(`  file://${process.cwd()}/${OUT_ROOT}/simulator/contact-sheet.html`);
+  if (runLaptopSafari) console.log(`  file://${process.cwd()}/${OUT_ROOT}/simulator/contact-sheet.html`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
