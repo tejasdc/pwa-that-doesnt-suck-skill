@@ -231,6 +231,16 @@ asset trees, worker/cache revisions and document time origins established the fa
 an offline cold-start test had passed without exercising this transition. Native library
 contract: [vite-plugin-pwa update prompting](https://vite-pwa-org.netlify.app/guide/prompt-for-update).
 
+Keeping an old tab alive also requires its unloaded hashed modules to remain fetchable.
+Native Workbox precache activation removes obsolete entries; `cleanupOutdatedCaches: false`
+does not disable that entry cleanup. Retain explicitly published immutable assets at their
+original URLs through deployment and rollback, while keeping HTML and the worker current.
+Do not serve the SPA shell for missing module URLs. Thinkering's different-bundle WebKit
+probe on 2026-09-07 returned200 HTML for an old lazy module and showed an error boundary;
+Chromium's HTTP cache masked it. Retained assets restored native two-engine acceptance.
+See `browser-verification`'s PWA-update procedure for the distinct-bundle proof and
+[Workbox precache activation](https://developer.chrome.com/docs/workbox/modules/workbox-precaching).
+
 ## HTML caching — the Workers Assets trap
 
 Workers Assets serves everything by default with `max-age=0, must-revalidate`. iOS Safari heuristically caches longer than the browser should when there's no explicit `no-cache` directive.
