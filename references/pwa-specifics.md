@@ -214,6 +214,23 @@ If you set `width: 100%` AND `height: 100%` AND `aspect-ratio: 1`, iOS Safari pi
 
 **Fix:** any grid intended to have layout intent gets an explicit `grid-template-columns` (`minmax(0, 1fr)` at minimum). Never rely on implicit tracks for shared parents.
 
+## Service-worker updates with live drafts
+
+An Update-button draft guard protects only the window where it runs. Exercise two live
+tabs with native worker installation, waiting and activation: leave an unsaved draft in
+one, then accept the update in the other. Assert the actual draft, loaded revision and
+document lifetime afterward, plus acknowledged local data across reload and reconnect.
+Where draft preservation is required, decide reload safety in each affected window at
+the native reload boundary; use the library's supported hook instead of replacing its
+worker lifecycle. A newly deployed guard cannot retrofit old JavaScript already executing
+in an existing tab. Preserve that historical negative separately from guarded revisions.
+
+Source: Thinkering native two-tab rollout, 2026-09-07. Its own-tab guard refused Update,
+but accepting in another tab reloaded both and erased an unsaved capture. Actual old/new
+asset trees, worker/cache revisions and document time origins established the failure;
+an offline cold-start test had passed without exercising this transition. Native library
+contract: [vite-plugin-pwa update prompting](https://vite-pwa-org.netlify.app/guide/prompt-for-update).
+
 ## HTML caching — the Workers Assets trap
 
 Workers Assets serves everything by default with `max-age=0, must-revalidate`. iOS Safari heuristically caches longer than the browser should when there's no explicit `no-cache` directive.
