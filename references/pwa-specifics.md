@@ -122,6 +122,18 @@ Even a private-only app needs these. Privacy is a product requirement, not a fea
 
 Apple's own dialog explains what a passkey is. The footer explainer is redundant and reads as apology. Delete it.
 
+## Device versions in diagnostics
+
+Label versions parsed from the user-agent as browser-reported. Safari on iOS 26 freezes
+the reported OS version to an older release, so it cannot establish the phone's installed
+iOS version. Keep browser version, app build and standalone mode separate; obtain the actual
+OS version from the user's Settings when an incident depends on it. Do not choose storage
+recovery or claim an upstream fix is present from the frozen OS field.
+
+Source: [WebKit features in Safari 26.0](https://webkit.org/blog/17333/webkit-features-in-safari-26-0/),
+and Thinkering's 2026-09-08 diagnostics work, where a user-reported iOS 26.6.1 incident would
+otherwise have been labeled with an older OS version by the in-app report.
+
 ## Notifications / push
 
 ### Policy as principle, not enumeration
