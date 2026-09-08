@@ -97,6 +97,16 @@ Never surface `.name`, `.message`, or raw `DOMException` text. Users see gibberi
 
 ### Session lifetime, revocation, and account deletion
 
+For login that survives quitting an installed app, configure the browser cookie's
+`Max-Age` or `Expires` as well as server-side session expiry, using the library's documented
+units. A server TTL alone does not make a persistent cookie: without those attributes,
+the browser retains it only for its own definition of a session
+([RFC 6265 §4.1.2.2](https://httpwg.org/specs/rfc6265.html#rfc.section.4.1.2.2)).
+Automate the response-attribute check and actual browser shutdown/relaunch on the same
+native profile, without exporting/reinjecting cookies. Assert retained authentication,
+server expiration and logout; restarting only the server does not test browser persistence.
+Keep the installed Safari host check distinct from Linux WebKit evidence.
+
 Browser cookie expiry is not server revocation. Cookies can be stolen, devices can be lost, users can want to log everyone out. Ship these before launch:
 
 - **Session TTL.** Every session has a server-side expiry. Even "remember me" sessions cap at some ceiling (30 days / 90 days / a year). Rolling expiry on activity is fine; a session that never expires isn't.
