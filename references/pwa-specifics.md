@@ -216,7 +216,79 @@ Mobile Safari's URL bar + toolbar consume ~120-190px depending on device.
 
 **For a surface that should USE the extra space when the URL bar retracts:** `100dvh` is the right choice; accept the reflow cost.
 
-Verify in the iOS Simulator, NOT in headless Chromium — headless reports the full nominal height and structurally can't see the URL-bar squeeze.
+Headless viewport sizing does not reproduce native Safari browser chrome. Follow [host-scoped verification](verification-stack.md): use representative short viewports in Chromium and WebKit on Linux; use the optional laptop Simulator layer when Safari chrome testing is in scope.
+
+### Keyboard-following controls use one coordinate system
+
+For a toolbar or composer that must stay above the keyboard, align its rendered bottom
+with the visual viewport's bottom in layout-viewport coordinates. Do not assume
+`window.innerHeight` measures the containing block used by CSS `position: fixed`.
+WebKit can shrink `innerHeight` with the keyboard while fixed positioning still uses a
+taller layout viewport. Then `bottom: innerHeight - (visualViewport.offsetTop +
+visualViewport.height)` can become zero even though the toolbar is hidden below the
+visible area. `dvh` and safe-area padding alone do not establish keyboard clearance.
+
+Mount the control where fixed positioning is relative to the viewport (outside ancestors
+that establish another fixed containing block, such as a transformed editor wrapper).
+Anchor from the top and translate by the control's own height:
+
+```css
+.keyboard-toolbar {
+  position: fixed;
+  top: 0;
+  bottom: auto;
+  left: 0;
+  width: 100%;
+  transform: translateY(-100%);
+}
+```
+
+```js
+function placeToolbar(toolbar) {
+  const viewport = window.visualViewport;
+  const root = document.documentElement;
+  const visibleBottom = viewport
+    ? viewport.offsetTop + viewport.height
+    : root.clientHeight;
+  toolbar.style.top = `${visibleBottom}px`;
+  toolbar.style.left = `${viewport?.offsetLeft ?? 0}px`;
+  toolbar.style.width = `${viewport?.width ?? root.clientWidth}px`;
+}
+```
+
+Run placement when mounted and on visual-viewport and window `resize`/`scroll`; coalesce
+updates with animation frames and remove listeners/cancel pending frames on teardown.
+Offsets and dimensions are already CSS pixels: do not multiply by device pixel ratio
+or substitute document-relative `pageTop`. Preserve pinch zoom. Measure toolbar height
+for editor scroll clearance, and derive occlusion from the actual shell bounds in the
+same coordinate system. Avoid measuring a shell whose size your clearance padding changes.
+
+For an apparently missing toolbar, inspect editor focus, DOM presence, computed styles
+and bounds before adding visibility triggers. Keep focus/selection ownership in the editor.
+For the affected interaction, retain a failing regression before the fix and check:
+
+- Both metric relationships: the visual viewport shrinks while `innerHeight` stays tall,
+  and `innerHeight` also shrinks while the CSS fixed containing block stays tall. Changing
+  only `visualViewport.height` misses the second case.
+- Keyboard open/close, viewport panning (`offsetTop`), repeated focus and toolbar actions;
+  for an outliner, tap root, child and grandchild editors, then dismiss and refocus.
+- Actual toolbar bounds against `offsetTop + height`, usable control dimensions, and
+  the caret above the toolbar. DOM visibility alone does not prove keyboard clearance.
+
+Label injected viewport metrics as a model of the coordinate boundary. Linux WebKit and
+phone-sized emulation do not exercise the native iOS keyboard or accessory view; record
+device confirmation separately when available, without making it a Linux release gate.
+The iOS arrows/checkmark accessory belongs to the native input system: a PWA has no
+supported HTML/JS switch to remove it. UIKit's `inputAccessoryView` belongs to native
+embedding apps. Do not guess an accessory height or use CSS/z-index to hide native chrome.
+
+Evidence: [Thinkering's fix and regression](https://github.com/tejasdc/thinkering/pull/2),
+[pinned executable test](https://github.com/tejasdc/thinkering/blob/1a01ac95df3f8cca9544ec23ab3f0b0a3fde236c/apps/web/tests/e2e/mobile-toolbar-focus.spec.ts).
+The regression reproduced a toolbar bottom of 664px against a 400px visible bottom;
+the user confirmed the deployed fix on their installed iPhone PWA on 2026-09-08.
+API references: [VisualViewport coordinate definitions and events](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport),
+[WebKit innerHeight implementation](https://github.com/WebKit/WebKit/blob/main/Source/WebCore/page/LocalDOMWindow.cpp),
+[native inputAccessoryView](https://developer.apple.com/documentation/uikit/uiresponder/inputaccessoryview).
 
 ### Flex intrinsic-min-content on shared parents
 

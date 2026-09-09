@@ -4,6 +4,8 @@
 
 The global host-specific browser policy is authoritative. On Linux, use `browser-verification` for Chromium and WebKit at mobile and desktop sizes. Native iPhone Safari is not required. The Simulator recipe below is only for optional Safari-focused work on the laptop. Source: Tejas's 2026-09-07 policy clarification after Linux agents repeatedly treated unavailable Apple tools as incomplete verification.
 
+For keyboard-following controls, use the [viewport geometry regression guidance](pwa-specifics.md#keyboard-following-controls-use-one-coordinate-system). A viewport mock must cover the metric relationship that failed; a phone-sized screenshot does not exercise native keyboard behavior.
+
 ## The stack (top of pyramid to bottom)
 
 Each layer catches a class of bug the layer below cannot see. Run them in order.
