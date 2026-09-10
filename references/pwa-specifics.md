@@ -2,6 +2,19 @@
 
 *Load before touching manifest, service worker, passkey / WebAuthn, push subscription, HTML head, iOS-specific styles, or origin-aware beacons. Each item below is a specific fix for a specific bug pattern that shipped, hit a real device, and needed a targeted invariant.*
 
+## Verify the manifest browsers receive
+
+Before diagnosing installation or orientation behavior, inspect the manifest linked
+from the built HTML and fetch the served manifest. A correct source file is not
+proof: a PWA build plugin can overwrite it with generated defaults. Keep one
+authoritative manifest; with VitePWA and a hand-authored public manifest, use
+`manifest: false` to disable competing generation. Verify the served orientation,
+identity, icons, and a single HTML manifest link before adding platform fallbacks.
+
+Source: chess-with-friends portrait fix, 2026-09-10. The public source requested
+portrait, but both build output and twochairs.club served generated defaults with
+no orientation or icons. [Vite PWA documents the public-manifest option](https://vite-pwa-org.netlify.app/guide/pwa-minimal-requirements).
+
 ## Passkey / WebAuthn
 
 ### rpID scoping — the exact rule
