@@ -21,6 +21,22 @@ Each layer catches a class of bug the layer below cannot see. Run them in order.
 | 7. Requirements ledger review | Regressions on stated invariants ("must not scroll on iPhone", "no toast during gameplay") | Pre-deploy |
 | 8. Live-production probe | Post-deploy: `/api/health`, asset hashes served, beacon count, the specific feature exercised on production URL | Immediately after deploy |
 
+### Preserve HTTPS enforcement when moving a domain
+
+A valid certificate proves HTTPS works; it does not prove HTTP redirects to it.
+Before moving an authenticated app from a host that enforces HTTPS, verify equivalent
+enforcement on the destination, including apex, www and API hosts. Probe HTTP without
+credentials and check the HTTPS destination, path and query before live sign-in.
+For Cloudflare, verify `always_use_https=on` or equivalent application enforcement.
+Check the credential permissions during preflight: Zone/DNS editing does not imply
+Zone Settings editing. Preserve the existing host's protection until this is verified.
+
+Source: Clarify.pm domain cutover review, September 12, 2026: Render supplied an
+automatic redirect, while the Worker forwarded apex HTTP requests unchanged and the
+deployment token could not inspect or update the zone setting. See
+[Cloudflare Always Use HTTPS](https://developers.cloudflare.com/ssl/edge-certificates/additional-options/always-use-https/)
+and [Render TLS](https://render.com/docs/tls).
+
 ## Why the ladder exists — the founding incidents
 
 Each layer was added because something below it failed in a way the layer above catches:
