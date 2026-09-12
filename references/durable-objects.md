@@ -59,6 +59,14 @@ async webSocketClose(ws: WebSocket) { /* ... */ }
 async webSocketError(ws: WebSocket) { /* ... */ }
 ```
 
+Keep close-handshake ownership with the runtime when the compatibility date is
+2026-04-07 or later (`web_socket_auto_reply_to_close`). A close handler may perform
+application cleanup, but must not blindly echo its received code through `close()`:
+a browser closing without a status produces reserved code 1005, which cannot be sent.
+Clarify.pm's September 2026 browser acceptance reproduced `InvalidAccessError` on
+logout from that echo; an application-only close handler passed native revocation
+and browser logout checks. See [Cloudflare WebSocket close behavior](https://developers.cloudflare.com/durable-objects/best-practices/websockets/).
+
 Read per-connection metadata via `readAttachment(ws)`:
 ```ts
 function readAttachment<T>(ws: WebSocket): T {
