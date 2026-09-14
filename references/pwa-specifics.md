@@ -1,6 +1,6 @@
 # PWA specifics
 
-*Load before touching manifest, service worker, passkey / WebAuthn, push subscription, HTML head, iOS-specific styles, or origin-aware beacons. Each item below is a specific fix for a specific bug pattern that shipped, hit a real device, and needed a targeted invariant.*
+*Load before touching browser background work, replication eligibility, manifest, service worker, passkey / WebAuthn, push subscription, HTML head, iOS-specific styles, or origin-aware beacons.*
 
 ## Verify the manifest browsers receive
 
@@ -31,6 +31,23 @@ of existing server work without replaying its creation. Prove that hidden failur
 settle, visible ownership transfers, and retained writes converge after return.
 Do not replace the unwanted work with a keep-alive hack or another polling loop.
 
+Apply this ownership check when adding each recurring feature, before an energy
+incident: name its eligibility, owner, stopping boundary and relevant recovery
+event. Separate durable local capture, network replication, view observation and
+accepted server execution. Stopping one must not implicitly destroy or restart the
+others. Persist drafts during ordinary work; do not rely on a final unload callback.
+Visibility and focus are different inputs. Decide whether a visible but unfocused
+view needs live freshness; do not invent an inactivity timer to infer user intent.
+
+An exclusive network owner must not wait behind a second, incompatible leadership
+gate. A held Web Lock is released by completing its callback, not by aborting the
+signal that requested it. Invalidate outgoing ownership before asynchronous cleanup
+and prevent stale completions from restarting work. Native suspension may interrupt
+cleanup; preserve checkpoints and test recovery without promising immediate handoff.
+Authentication recovery may retry an auth refusal; foreground return alone does not
+repair invalid data. Use `local-test`'s idle-performance reference for work-count
+oracles, external measurement and continuous-test evidence.
+
 Concrete dependency trap: RxDB 17.5.0's visibility handler keeps the elected leader
 running when hidden and calls `start()` when a follower becomes visible. Setting
 `toggleOnDocumentVisible: false` instead enables a simulated mouse event every 20
@@ -43,6 +60,8 @@ storage; it did not reproduce Safari's OS energy termination.
 [RxDB 17.5.0 lifecycle](https://github.com/pubkey/rxdb/blob/17.5.0/src/plugins/replication/index.ts#L804),
 [hibernation helper](https://github.com/pubkey/rxdb/blob/17.5.0/src/plugins/replication/replication-helper.ts#L101),
 [WebKit energy guidance](https://webkit.org/blog/8970/how-web-content-can-affect-power-usage/).
+The ownership refinements follow the independent September 14 assessment and
+[Web Locks lifecycle](https://www.w3.org/TR/web-locks/#api-lockmanager-request).
 
 ## Passkey / WebAuthn
 
