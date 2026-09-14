@@ -15,6 +15,35 @@ Source: chess-with-friends portrait fix, 2026-09-10. The public source requested
 portrait, but both build output and twochairs.club served generated defaults with
 no orientation or icons. [Vite PWA documents the public-manifest option](https://vite-pwa-org.netlify.app/guide/pwa-minimal-requirements).
 
+## Background work needs an explicit owner
+
+For an idle-energy investigation, distinguish visible inactivity, a hidden document,
+and browser suspension. Inventory dependency timers as well as application timers,
+network streams, retries and observer work. A visibility option or leader flag is
+not proof that hidden work stops: inspect the installed implementation and measure
+leader and follower transitions with actual request/read counts. Keep the executing
+build and pending-operation timeline separate from an OS warning; a pending badge
+alone does not establish continuous work or a failed upload.
+
+When the product does not require hidden synchronization, retain local drafts and
+durable checkpoints while suspending transport and status polling. Resume observation
+of existing server work without replaying its creation. Prove that hidden failures
+settle, visible ownership transfers, and retained writes converge after return.
+Do not replace the unwanted work with a keep-alive hack or another polling loop.
+
+Concrete dependency trap: RxDB 17.5.0's visibility handler keeps the elected leader
+running when hidden and calls `start()` when a follower becomes visible. Setting
+`toggleOnDocumentVisible: false` instead enables a simulated mouse event every 20
+seconds. Verify the version before applying any workaround; neither boolean value
+alone defines a foreground-only replication lifecycle.
+
+Sources: Thinkering's September 14, 2026 investigation reproduced hidden five-second
+upload retries and follower startup in Chromium and WebKit on Linux using synthetic
+storage; it did not reproduce Safari's OS energy termination.
+[RxDB 17.5.0 lifecycle](https://github.com/pubkey/rxdb/blob/17.5.0/src/plugins/replication/index.ts#L804),
+[hibernation helper](https://github.com/pubkey/rxdb/blob/17.5.0/src/plugins/replication/replication-helper.ts#L101),
+[WebKit energy guidance](https://webkit.org/blog/8970/how-web-content-can-affect-power-usage/).
+
 ## Passkey / WebAuthn
 
 ### rpID scoping — the exact rule
