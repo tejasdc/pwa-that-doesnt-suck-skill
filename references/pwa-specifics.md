@@ -288,6 +288,16 @@ For the affected interaction, retain a failing regression before the fix and che
 - Actual toolbar bounds against `offsetTop + height`, usable control dimensions, and
   the caret above the toolbar. DOM visibility alone does not prove keyboard clearance.
 
+When native keyboard surfaces expose page content through spacing or translucency,
+continue the toolbar's opaque background from its visible bottom through the remaining
+layout viewport. Keep that paint outside control sizing and pointer handling; derive its
+extent from viewport geometry instead of guessing the native accessory height. Check the
+painted seam with contrasting content underneath, including fractional device scales,
+and remove the backing when the viewport is no longer occluded. Correct toolbar bounds
+alone do not prove that underlying content stays hidden.
+Source: [Thinkering's pixel regression and fix](https://github.com/tejasdc/thinkering/commit/ac79199aa201ebfa3e1e3c96a7ba44dd96beb5ab),
+2026-09-14: WebKit reproduced uncovered content; Chromium exposed a fractional-scale seam.
+
 Label injected viewport metrics as a model of the coordinate boundary. Linux WebKit and
 phone-sized emulation do not exercise the native iOS keyboard or accessory view; record
 device confirmation separately when available, without making it a Linux release gate.
