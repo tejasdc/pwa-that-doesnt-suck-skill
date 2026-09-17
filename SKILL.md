@@ -84,6 +84,7 @@ Drop-in starters — copy the file, then work through `templates/test-adaptation
 
 - A static marketing page with no server state → use `frontend-design` / `impeccable` / `high-end-visual-design`.
 - A pure native mobile app (Swift/Kotlin) → use platform skills.
+- Wrapping this PWA in a native shell (WKWebView, widgets, share extension, universal links) → load `pwa-native-shell` alongside this one. This skill's Invariant 6 (installed-PWA has its own cookies / subscription / permissions) and `references/service-worker-lifecycle.md` Rule A (installed PWA updates itself) are *inputs* the shell must respect and never restate; the shell skill covers the WKWebView, WKUIDelegate, App-Bound Domains, App Group, and inbound-event pieces.
 - A component-library polish task on an existing shipped PWA → use `impeccable` for the design work; only load this skill's `state-machines.md` if you're adding a lifecycle.
 - A "chatbot in a webpage" without lifecycles → this skill's weight is overhead you don't need.
 
