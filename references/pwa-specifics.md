@@ -252,7 +252,7 @@ Once a user taps "Don't Allow" inside the installed PWA, iOS records the block. 
 | Surface | Verified path |
 |---|---|
 | Native iOS wrapper app | A button that opens `UIApplication.openNotificationSettingsURLString` (iOS 16+), which lands on the app's own Notifications page; copy says "turn on Allow Notifications". |
-| Safari web app in the Mac Dock (macOS 26) | **There is no switch.** The web app's Settings window has only General and Privacy; Privacy shows "Notification Settings" only after a first allow, plus "Clear Website Data…". Recovery is Apple's documented remove-and-add-again: quit it, drag it from `~/Applications` to the Trash, then in Safari choose File → Add to Dock…. |
+| Safari web app in the Mac Dock (macOS 26) | Two refusals can exist. macOS's own switch, System Settings → Notifications → <app> → **Allow notifications**, appears once the app has asked; when it is off, a proper click is refused in under a millisecond with no prompt (`UNErrorDomain Code=1` in the unified log). The web app also saves "denied" for the site. Its Settings window has no switch for that, only "Notification Settings" and "Clear Website Data…". Show the macOS switch first; Apple's remove-and-add-again (drag from `~/Applications` to the Trash, Safari → File → Add to Dock…) resets both. |
 | iOS home-screen web app | See the recovery section above. |
 
 Confirm a platform's path from its own strings or docs before shipping copy (on macOS: `Safari.framework/…/WebAppPrivacyPreferences.strings`). Don't guess a Settings path that doesn't exist.
