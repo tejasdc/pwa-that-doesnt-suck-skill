@@ -89,7 +89,7 @@ Shape that avoids this:
 A permission prompt the user has to go find in Settings is a feature nobody turns on. The platforms differ in what they allow:
 
 - **Native iOS** can request notification permission without a preceding user gesture — ask as part of the flow that will actually use it (e.g., right after the action whose response the notification will announce).
-- **Browsers, Safari especially, require a user gesture** to request permission. If the natural moment to ask isn't itself a click, arm a one-time listener on the next click/tap rather than rendering a dedicated "Enable notifications" button as the primary path — the button is a fallback, not the design.
+- **Browsers, Safari especially, require a user gesture** to request permission, and an ask outside one is not merely ignored: Safari can record it as a permanent refusal without ever showing the prompt. Ask only from a visible "Turn on notifications" control whose click calls `Notification.requestPermission()` as its first act. See [permission asks and the blocked state](pwa-specifics.md#permission-asks-and-the-blocked-state) for the rule, the evidence, and how to recover once a refusal is stored.
 
 ## Rule 9: only notify for the signal that already means "a human is needed"
 

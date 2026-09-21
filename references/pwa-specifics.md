@@ -243,6 +243,24 @@ Once a user taps "Don't Allow" inside the installed PWA, iOS records the block. 
 
 **Recovery copy** (drop-in): "Notifications are off. To turn them back on, delete the app from your Home Screen and add it back — you'll be asked again. Or open Settings → Notifications, find this app in the list, and enable Allow Notifications."
 
+### Permission asks and the blocked state
+
+**Ask only as the first act of a real click.** Safari grants notification permission (and a new push subscription) only inside a user gesture, and the gesture does not survive an `await` on the network. An ask at startup, on an arbitrary tap handler, or after `await fetch(...)` inside a click can be refused *silently*: no prompt appears, and the refusal is stored as `denied` just like a "Don't Allow". Fetch the VAPID key and `navigator.serviceWorker.ready` *before* the click, hand the button a prepared function, and keep the control disabled until that function exists. Startup may only re-subscribe when permission is already `granted`. Audit every `requestPermission` call site: tonight's second offender was a Settings button that read config first.
+
+**`denied` is a first-class state, not an absence.** Never hide the enable control silently. Say that notifications are blocked on this device, and show the exact path to reverse it *on this platform*, verified on that platform, in the words it uses:
+
+| Surface | Verified path |
+|---|---|
+| Native iOS wrapper app | A button that opens `UIApplication.openNotificationSettingsURLString` (iOS 16+), which lands on the app's own Notifications page; copy says "turn on Allow Notifications". |
+| Safari web app in the Mac Dock (macOS 26) | **There is no switch.** The web app's Settings window has only General and Privacy; Privacy shows "Notification Settings" only after a first allow, plus "Clear Website Data…". Recovery is Apple's documented remove-and-add-again: quit it, drag it from `~/Applications` to the Trash, then in Safari choose File → Add to Dock…. |
+| iOS home-screen web app | See the recovery section above. |
+
+Confirm a platform's path from its own strings or docs before shipping copy (on macOS: `Safari.framework/…/WebAppPrivacyPreferences.strings`). Don't guess a Settings path that doesn't exist.
+
+**Detect re-enablement and carry on.** Re-read permission on `visibilitychange` (visible), `focus`, and `navigator.permissions.query({name:'notifications'}).onchange` where available. When it returns as `granted`, register immediately without another question. When it returns as `default`, show the one-click ask again. Coming back from Settings should be the user's last step.
+
+*Source:* Thinkering, 2026-09-20/21. The Mac Dock web app never subscribed because a startup ask was stored as `Permission=0` in the web app's `UserNotificationPermissions.plist` with no prompt shown (7:34 PM). Fix and recovery: `apps/web/src/notifications.ts`, `notification-notice.tsx`, commit `2b2bd25`.
+
 ### Notification titles are human strings, not template placeholders
 
 Wrong: `"Game challenge from chess"` — this ships when the developer copy-pastes a placeholder.
