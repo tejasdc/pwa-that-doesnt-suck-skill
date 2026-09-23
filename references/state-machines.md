@@ -200,3 +200,31 @@ The DO `socket` handler accepts a new WebSocket via `ctx.acceptWebSocket(server)
 
 - Every rule and pattern above is drawn from `docs/state-machines.md` (audit + model, 7 machines) and `docs/state-machine-rules.md` (the 8 rules + anti-patterns) in the reference project. Read those files if you want the specific gap numbering (GAP-N) and the exact commits that closed each.
 - Compatible sister skill: `stateful-shapes` — deeper on FSM design theory for chat / workflows / actors.
+
+## A placeholder state is a claim about what the system knows
+
+"Not read yet", "Loading…", "Unknown", a name rendered as the identifier it was filed
+under — each of these tells the user the system does not have something. Ship one only when
+that is true. If the data exists anywhere the surface can reach, the placeholder is a lie
+the user cannot distinguish from a broken screen, and they will read it as one.
+
+Two habits make this concrete:
+
+- **Before rendering a placeholder, ask where that value already lives.** A value keyed one
+  way in one table and another way in the view is not missing; it is unmatched. Reconcile
+  the keys instead of rendering absence.
+- **A leftover you knowingly ship is a defect with a note attached, not a rough edge.**
+  "It will correct itself the next time X happens" is a sentence about your model of the
+  system, not about the user's next five minutes.
+
+Source: Thinkering's Accounts screen, 2026-09-23. A kept Claude account was listed by the
+name its credential file was saved under (`tejastej-dc-gmail-com`) rather than its address,
+because the credential carries no address. The agent shipped that knowingly, reasoning that
+it was "honest rather than pretty" and would heal on next use. But usage readings are keyed
+by address, so the same row then also read **"Usage not read yet"** — while that account was
+sitting at a spent weekly allowance it needed to show him. Tejas: *"Why does it say usage not
+read yet? How long does it take to read a usage? It's been fucking hours here. And look, what
+is what is happening with my email address here? Why is it being dispelled like that?"* The
+address was recoverable in one lookup, by applying the same naming function forward over the
+addresses the machine already listed and matching — an equality check on a function we own,
+never a guess at what a slug used to be. One withheld value produced two wrong states.
