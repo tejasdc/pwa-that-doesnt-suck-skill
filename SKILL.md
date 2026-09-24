@@ -1,6 +1,6 @@
 ---
 name: pwa-that-doesnt-suck
-description: Build, ship, or debug an installable PWA, especially Cloudflare Workers and Durable Objects applications with stateful interactions, passkeys, push, offline use, or iPhone WebKit behavior. Covers native lifecycle ownership, draft-safe updates, isolated browser and device verification, and observable UI states. Use alongside a design skill for visual design. Not for static pages, purely native apps, or standalone component polish.
+description: Build, ship, or debug an installable PWA, including when a public signup idea may hit a five-user provider cap and "what do you mean, 5 people?" Covers provider feasibility, native lifecycle ownership, push, offline use, and iPhone WebKit behavior. Use alongside a design skill for visual design. Not for static pages or purely native apps.
 ---
 
 # PWA That Doesn't Suck
@@ -26,6 +26,7 @@ Each one has a full reference file; the invariant here is the load-bearing sente
 
 Before writing any code:
 
+0. **Prove the stated audience can join through the proposed provider.** Record the launch floor (for example 100 public signups from a tweet), each provider's per-app user cap and access gate, and the actual steps a visitor must take. A technically functional five-user developer-mode integration is not a feasible public prototype when the floor is 100. Compare official, intermediary, and user-supplied paths before recommending one; a path that reaches the count by adding accounts or consent steps must say so plainly. See `references/provider-feasibility.md`.
 1. **Draft `docs/requirements.md` and `docs/requirements-ledger.md`.** The requirements doc is discussion. The ledger is the shipping gate — every stated invariant recorded verbatim with an evidence pointer, verified with screenshot / probe / test name before every deploy. Copy `templates/requirements-ledger.md`.
 2. **Draft `docs/state-machines.md` before any lifecycle code.** Copy `templates/state-machines.md`. Names every machine, its states, transitions, guards, single writer, projections, closure, and cardinality budgets for bootstrap payloads. A PR that adds a lifecycle without landing this file in the same change is incomplete.
 3. **Decide origin strategy and account model.** Canonical auth origin, duplicate-domain behavior, rename resilience, add-passkey flow, account recovery — record in the ledger BEFORE the first passkey ships. See `references/pwa-specifics.md`.
@@ -66,6 +67,7 @@ Load on demand:
 | `references/ios-wrapper-and-web-push.md` | Shipping push to BOTH a native iOS wrapper app and an installed web app. Web Push doesn't reach a WKWebView; APNs setup order (App ID capability, entitlements, portal-only key, Configure dropdowns, one-time `.p8` download); provider JWT (`ieee-p1363`, token reuse, one HTTP/2 session, all-zeros-token credential check); RFC 8291 payload encryption without a library; one install-keyed registry routed to the visible surface. |
 | `references/react-imperative-animation.md` | Writing animation code that mutates DOM directly, or any effect that POSTs. Ownership isolation pattern + error boundary + command-effect stable-dep rule. |
 | `references/accessibility.md` | Shipping any interactive component. Four-column spec (role / keyboard / focus / SR state), common widget patterns, keyboard-only walkthrough gate. |
+| `references/provider-feasibility.md` | Scoping a public PWA around external account data, especially where a developer-mode pilot could miss the launch audience. |
 
 ## Template index
 
