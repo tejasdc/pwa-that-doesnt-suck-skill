@@ -218,7 +218,7 @@ Two habits make this concrete:
   system, not about the user's next five minutes.
 
 Source: Thinkering's Accounts screen, 2026-09-23. A kept Claude account was listed by the
-name its credential file was saved under (`tejastej-dc-gmail-com`) rather than its address,
+name its credential file was saved under (an address-derived slug such as `someone-example-com`) rather than its address,
 because the credential carries no address. The agent shipped that knowingly, reasoning that
 it was "honest rather than pretty" and would heal on next use. But usage readings are keyed
 by address, so the same row then also read **"Usage not read yet"** — while that account was
