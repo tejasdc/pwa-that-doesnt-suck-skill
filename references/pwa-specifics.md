@@ -44,6 +44,11 @@ Web App** while adding it. Older releases require the site's web-app
 configuration for that behavior. Test any browser-specific card on the actual
 browser before shipping its copy.
 
+Working implementations to copy rather than rewrite: starter-stack's
+`packages/web/src/lib/install-app.tsx` (a new app forked from the template has the
+offer already), chess-with-friends' `src/installPrompt.ts`, and thnkr.ing's
+`apps/web/src/install-app.tsx`.
+
 `navigator.install()` (Web Install API) and the `<install>` element remain
 experimental origin-trial features, not a default replacement for
 `beforeinstallprompt`.
