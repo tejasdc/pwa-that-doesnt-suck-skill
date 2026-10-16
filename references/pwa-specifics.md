@@ -15,6 +15,50 @@ Source: chess-with-friends portrait fix, 2026-09-10. The public source requested
 portrait, but both build output and twochairs.club served generated defaults with
 no orientation or icons. [Vite PWA documents the public-manifest option](https://vite-pwa-org.netlify.app/guide/pwa-minimal-requirements).
 
+## Offer installation from inside the app
+
+Where the browser emits `beforeinstallprompt`, prefer a visible **Install app** action
+over instructions to hunt through its menu. Chrome on Android and desktop and Edge
+support this flow; Samsung Internet documents an in-app install button too. The
+event is the capability signal: keep the action hidden until it arrives, rather
+than assuming a browser name guarantees eligibility. Confirm the built and served
+manifest first if an expected event never arrives.
+
+In the event handler, call `preventDefault()` and retain the event. From the
+person's click or tap on Install app, call its `prompt()` once, then read
+`userChoice` (`accepted` or `dismissed`); discard that event after use. Listen for
+`appinstalled` to clear the offer when installation completes through any browser
+entry point. Do not treat a dismissed dialog as an installation. Show the offer
+after a useful moment (for example, after repeat use), make it dismissible, and
+remember dismissal so it does not nag. Hide it in standalone display mode and
+when shell attribution says the page is inside a native app. These events are
+not cross-browser guarantees, so keep the normal web experience usable without them.
+
+Safari on iPhone and Mac has no page-triggered install request; Firefox does not
+provide this prompt either. On iPhone Safari only, a small, dismissible fallback
+card may say “Tap Share, then Add to Home Screen.” Do not show it in other iPhone
+browsers, an installed Home Screen web app, or a native shell. On macOS Safari,
+the manual route is **File > Add to Dock**. On iOS/iPadOS 26, adding a site to
+Home Screen opens it as a web app by default; the person can turn off **Open as
+Web App** while adding it. Older releases require the site's web-app
+configuration for that behavior. Test any browser-specific card on the actual
+browser before shipping its copy.
+
+`navigator.install()` (Web Install API) and the `<install>` element remain
+experimental origin-trial features, not a default replacement for
+`beforeinstallprompt`.
+
+Sources: [web.dev custom install flow](https://web.dev/articles/customize-install),
+[web.dev promotion patterns](https://web.dev/articles/promote-install),
+[MDN install support](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable),
+[Edge custom installation](https://learn.microsoft.com/en-us/microsoft-edge/progressive-web-apps/how-to/best-practices),
+[Samsung's in-app install button](https://developer.samsung.com/browser/blog/en/2020/09/30/redeeming-push-notifications),
+[WebKit's WONTFIX request](https://bugs.webkit.org/show_bug.cgi?id=193959),
+[Safari 26 Home Screen behavior](https://webkit.org/blog/17333/webkit-features-in-safari-26-0/),
+[Apple's Add to Dock steps](https://support.apple.com/en-gb/104996),
+[Edge's Web Install API trial](https://blogs.windows.com/msedgedev/2025/11/24/the-web-install-api-is-ready-for-testing/),
+and [Chrome's install-element trial](https://developer.chrome.com/blog/install-element-ot).
+
 ## Background work needs an explicit owner
 
 For an idle-energy investigation, distinguish visible inactivity, a hidden document,
