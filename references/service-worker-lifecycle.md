@@ -48,36 +48,49 @@ app changed and what to look for.
 the app tells the person what happened and why it is updating, and still waits for live
 work to be saved first.
 
-### Offer only a content-backed release
+### Offer only the downloaded release's own description
 
-The waiting worker's existence, a completed update check, or a details-request retry does
-not establish that a useful update is ready to offer. Resolve the stable identity of the
-waiting release and load its actual, accurate user-facing notes first; unavailable,
-loading, failed, or empty details mean no offer, and generic invented filler such as
-"Fixes and speed improvements" cannot stand in for release content. If the release has
-no meaningful note for the person, do not show an offer. Keep detail-fetch transport
-state separate from offer visibility: retries and transient failures must not clear and
-recreate an already content-backed offer. Bind dismissal to that release identity for
-the current session so a retry or repaint cannot bring back the same dismissed offer;
-a different identified release with its own notes is a new offer. This narrows only
-which releases are shown; the explicit Update tap, reload ownership, and live-work guard
-above remain unchanged.
+The waiting worker's existence, a completed update check, or a detail-fetch retry does
+not establish that useful release details are ready. Resolve the description from the
+source keyed to the exact downloaded worker revision. Do not make that content's
+availability depend on a later activation record in the release-history ledger: during
+the October 23 incident, the server's startup warm cache preceded the activation record,
+so its first read returned old history even though the authored note already existed for
+the downloaded release. The original successful response body was not retained, but the
+timing and retained authored note identify this mismatch; a reproduction proved the
+warm-cache ordering can return old history before the activation is recorded.
 
-Tejas reported the offer returning without anything useful to show on 2026-10-23 at
-11:40 AM Eastern: "If there is no fucking thing to show. Why does it show up?" The
-retained page record moved from update details `unavailable` with count 0 to `ready`
-with count 1, 24 seconds later. The attached screenshot 10 seconds after the empty
-response shows the visible update banner with a "What's new:" heading and no detail;
-the page did not log offer visibility transitions.
-Source: capture `16f2d253a9a01235669ea269b0d28f2a128e0f62e32dfa630b45a7a10d0bef43`,
-request `fc78fdcd` (2026-10-23).
+Keep the unknown-content UI guard separate from that root repair. If the exact revision
+has no description, or its description is empty or only generic filler such as "Fixes
+and speed improvements," ignore that content and show no offer. But do not call known
+content unavailable merely because a later ledger has not caught up. Preserve the
+requested revision, the revision actually answered, and the reason a description could
+not be resolved so the mismatch can be diagnosed. Keep retry transport state separate
+from offer visibility; a retry cannot create an offer or resurrect a dismissed one.
+Bind dismissal to the downloaded revision for the current session. A different
+identified revision with its own description is a new offer. The explicit Update tap,
+reload ownership, and live-work guard above remain unchanged.
 
-**Regression:** drive release details through `unavailable → loading → ready`, first with
-empty details and then with a real note. Assert no offer while unavailable, loading, or
-empty; show it only after the identified release's actual notes arrive. Dismiss it, repeat
-the fetch/retry and transient-unavailable path in the same session, and assert that the
-same offer stays dismissed; then supply a different release identity and assert its own
-notes can be offered.
+Tejas reported the empty update banner on 2026-10-23 at 11:40 AM Eastern: "If there is
+no fucking thing to show. Why does it show up?" The retained page record moved from
+details `unavailable`, count 0, to `ready`, count 1, 24 seconds later; a screenshot 10
+seconds after the first response shows the banner with a blank "What's new:" area. The
+first diagnosis treated this as an empty-offer presentation defect alone. Tejas corrected
+the framing: "So the solution is not to prevent empty description from coming in the 1st
+place, but to just ignore them." He also said, "you're not going to investigate too."
+The concrete cause was a startup warm-cache read before the activation record existed;
+the later activation ledger was incorrectly made the description source. The original
+response body remains unretained. Source: capture
+`16f2d253a9a01235669ea269b0d28f2a128e0f62e32dfa630b45a7a10d0bef43`, request
+`fc78fdcd` (2026-10-23); reproduced warm-cache/late-activation ordering.
+
+**Regression:** separately check (1) unknown, empty, and generic descriptions remain
+ignored, including through `unavailable → loading → ready`, and cannot show or restore a
+dismissed offer, and (2) a real description keyed to the downloaded revision remains
+available when startup warm history predates its later activation record. Record both
+the requested and answered revisions and the resolution reason; verify that the answer
+uses the requested revision's description despite stale activation history. Then supply a
+different downloaded revision and verify its own description is offered.
 
 ### Check
 
