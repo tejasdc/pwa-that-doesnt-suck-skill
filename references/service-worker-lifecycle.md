@@ -28,9 +28,8 @@ app changed and what to look for.
 2. **Say what is in it.** Each build publishes short, plain release notes for its version
    (one or two lines per user-visible change, written for the person, not a commit log).
    The update notice reads the *waiting* version's notes, fetched `no-cache` from the new
-   deploy, so the old page shows what the new code does. A build with no user-visible
-   change says so ("Fixes and speed improvements"). One source per fact: the notes ship
-   with the build that they describe; the notice never hard-codes them.
+   deploy, so the old page shows what the new code does. One source per fact: the notes
+   ship with the build that they describe; the notice never hard-codes them.
 3. **Make the state visible and quiet.** "Update ready" is inline status at a stable
    place in the app (see `interaction-feedback.md`), not a blocking modal and not a
    toast that disappears. Dismissing it hides it for this session; it comes back on the
@@ -48,6 +47,37 @@ app changed and what to look for.
 **The one exception** is a version that is broken or unsafe to keep running. Even then
 the app tells the person what happened and why it is updating, and still waits for live
 work to be saved first.
+
+### Offer only a content-backed release
+
+The waiting worker's existence, a completed update check, or a details-request retry does
+not establish that a useful update is ready to offer. Resolve the stable identity of the
+waiting release and load its actual, accurate user-facing notes first; unavailable,
+loading, failed, or empty details mean no offer, and generic invented filler such as
+"Fixes and speed improvements" cannot stand in for release content. If the release has
+no meaningful note for the person, do not show an offer. Keep detail-fetch transport
+state separate from offer visibility: retries and transient failures must not clear and
+recreate an already content-backed offer. Bind dismissal to that release identity for
+the current session so a retry or repaint cannot bring back the same dismissed offer;
+a different identified release with its own notes is a new offer. This narrows only
+which releases are shown; the explicit Update tap, reload ownership, and live-work guard
+above remain unchanged.
+
+Tejas reported the offer returning without anything useful to show on 2026-10-23 at
+11:40 AM Eastern: "If there is no fucking thing to show. Why does it show up?" The
+retained page record moved from update details `unavailable` with count 0 to `ready`
+with count 1, 24 seconds later. The attached screenshot 10 seconds after the empty
+response shows the visible update banner with a "What's new:" heading and no detail;
+the page did not log offer visibility transitions.
+Source: capture `16f2d253a9a01235669ea269b0d28f2a128e0f62e32dfa630b45a7a10d0bef43`,
+request `fc78fdcd` (2026-10-23).
+
+**Regression:** drive release details through `unavailable → loading → ready`, first with
+empty details and then with a real note. Assert no offer while unavailable, loading, or
+empty; show it only after the identified release's actual notes arrive. Dismiss it, repeat
+the fetch/retry and transient-unavailable path in the same session, and assert that the
+same offer stays dismissed; then supply a different release identity and assert its own
+notes can be offered.
 
 ### Check
 
