@@ -51,14 +51,18 @@ work to be saved first.
 ### Offer only the downloaded release's own description
 
 The waiting worker's existence, a completed update check, or a detail-fetch retry does
-not establish that useful release details are ready. Resolve the description from the
-source keyed to the exact downloaded worker revision. Do not make that content's
-availability depend on a later activation record in the release-history ledger: during
-the October 23 incident, the server's startup warm cache preceded the activation record,
-so its first read returned old history even though the authored note already existed for
-the downloaded release. The original successful response body was not retained, but the
-timing and retained authored note identify this mismatch; a reproduction proved the
-warm-cache ordering can return old history before the activation is recorded.
+not establish that useful release details are ready. Resolve its description from the
+prepared publication snapshot sealed with the build and keyed to the exact downloaded
+worker revision. Runtime must not read Git or derive offer notes from the activation
+history ledger. In the October 23 incident, startup warmed historical release data
+before the activation record existed. An isolated reproduction established that this
+ordering can return old history; the incident trace is consistent with that mechanism,
+but the original successful response was not retained. The authored description was
+already present in the prepared publication source. The production repair resolves the
+waiting revision there. The historical Releases view retains its live overlay; it is a
+separate projection and does not own pending-offer content. This follows the permanent
+prepare-at-write/read-prepared decision (AGENTS606); a direct-Git prototype was rejected
+before shipping and is not the repair.
 
 Keep the unknown-content UI guard separate from that root repair. If the exact revision
 has no description, or its description is empty or only generic filler such as "Fixes
@@ -78,19 +82,22 @@ seconds after the first response shows the banner with a blank "What's new:" are
 first diagnosis treated this as an empty-offer presentation defect alone. Tejas corrected
 the framing: "So the solution is not to prevent empty description from coming in the 1st
 place, but to just ignore them." He also said, "you're not going to investigate too."
-The concrete cause was a startup warm-cache read before the activation record existed;
-the later activation ledger was incorrectly made the description source. The original
-response body remains unretained. Source: capture
+The reproduced failure mechanism is a startup warm-cache read before activation history
+is current; the incident trace is consistent with it, but its exact successful response
+is unavailable. The prepared publication snapshot, sealed with the build, is the source
+for pending-offer descriptions; the live historical Releases overlay remains separate.
+Source: capture
 `16f2d253a9a01235669ea269b0d28f2a128e0f62e32dfa630b45a7a10d0bef43`, request
 `fc78fdcd` (2026-10-23); reproduced warm-cache/late-activation ordering.
 
 **Regression:** separately check (1) unknown, empty, and generic descriptions remain
 ignored, including through `unavailable → loading → ready`, and cannot show or restore a
-dismissed offer, and (2) a real description keyed to the downloaded revision remains
-available when startup warm history predates its later activation record. Record both
-the requested and answered revisions and the resolution reason; verify that the answer
-uses the requested revision's description despite stale activation history. Then supply a
-different downloaded revision and verify its own description is offered.
+dismissed offer, and (2) a real description in the build-sealed prepared publication
+snapshot remains available when startup warm history predates its activation record.
+Record requested and answered revisions and the resolution reason. Verify pending offers
+use only that prepared snapshot, while the historical Releases view retains its live
+overlay. Then supply a different downloaded revision and verify its own description is
+offered.
 
 ### Check
 
