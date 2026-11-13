@@ -2,59 +2,9 @@
 
 *Load before dispatching Codex or a subagent, or when running multiple agents on the same repo. This encodes the process discipline that prevents silent progress loss, cross-agent path collisions, and shipping-without-looking.*
 
-## Codex CLI — the deterministic pattern
+## Codex CLI
 
-Codex reviews and long-running codex implementation sessions are dispatched via the `codex exec` CLI, NOT the MCP integration. The MCP is buggy and unreliable in practice.
-
-### Fresh session
-
-```bash
-# Short prompt inline:
-codex exec --full-auto "PROMPT HERE" 2>&1 | tee tmp/reviews/<purpose>.run.log
-
-# Long prompt (>~1KB) — write to file, pipe in:
-cat /tmp/codex-<purpose>.txt | codex exec --full-auto 2>&1 | tee tmp/reviews/<purpose>.run.log
-```
-
-**Invoke with `run_in_background: true` on the Bash tool. DO NOT wrap in `nohup` or append `&`.** The Bash tool tracks the child; `nohup ... &` detaches codex and the completion notification fires for the wrapper (~10s) instead of the real 10-30 min codex run.
-
-Flags:
-- `--full-auto` = sandbox=workspace-write + approval=never. Default for iteration.
-- `-s read-only` for pure review / analysis work that must not modify files (also hook-exempt for the `[GOALS-ONLY]` marker check).
-- `--dangerously-bypass-approvals-and-sandbox` for implementation work needing full access (network, DerivedData writes, etc.) — this flag is the ONE that works on `resume` (`--sandbox` is rejected on resume).
-- `--skip-git-repo-check` when cwd is outside a git repo.
-
-Always tee to `tmp/reviews/<purpose>.run.log` so the run survives even if the Bash `.output` capture drops (~70% failure rate documented in issue #17011).
-
-### Resume by explicit UUID — NEVER `--last`
-
-`resume --last` is a race against every other codex run on the machine. Silent failures land the follow-up prompt in the wrong conversation.
-
-Capture the UUID at dispatch:
-```bash
-# After dispatch, extract:
-grep -oE "session id: [0-9a-f-]+" tmp/reviews/<name>.run.log | head -1 | awk '{print $3}'
-```
-
-Resume:
-```bash
-codex exec resume <UUID> --full-auto "FOLLOW-UP PROMPT" 2>&1 | tee tmp/reviews/<name>-resume.run.log
-# Or for full-access resume:
-codex exec resume <UUID> --dangerously-bypass-approvals-and-sandbox "..." 2>&1 | tee tmp/reviews/<name>-resume.run.log
-```
-
-Verify the resume landed on the right session AND actually ran:
-```bash
-echo "prior:   $(grep -oE 'session id: [0-9a-f-]+' tmp/reviews/<original>.run.log | head -1)"
-echo "resume:  $(grep -oE 'session id: [0-9a-f-]+' tmp/reviews/<name>-resume.run.log | head -1)"
-```
-The UUIDs MUST match. If the resume log is empty within 10s, the codex process never spawned — often the goals-only hook blocking a missing `[GOALS-ONLY]` marker. Fix and redispatch.
-
-### When to fresh vs resume
-
-**Resume** ONLY when: pushing back or going deeper on the SAME design; prior reasoning is load-bearing for the follow-up.
-
-**Fresh** for: a different fix, a different scoped task, a follow-up whose prompt stands on its own, parallel independent tasks, or when >30min have passed and prior context isn't load-bearing. Fresh costs a few seconds; resume costs a dropped ball if you're wrong about which session.
+Use the `codex-cli` skill for Codex invocation, model naming, project trust, explicit-UUID resume, background execution, and completion handling. It is the single authority for current CLI flags and version differences. The goals-only brief guidance below applies when preparing a Codex task.
 
 ## Goals-only briefs
 
@@ -70,27 +20,9 @@ Good brief:
 
 Mark goals-only briefs with `[GOALS-ONLY]` at the top of the prompt if a hook is enforcing it.
 
-## Long-running work — arm your own monitor
+## Long-running Codex work
 
-**Task notifications are a convenience, not a contract.** They CAN and DO break silently. Never depend on a notification arriving to resume work.
-
-Any background work >5min needs a `ScheduleWakeup` armed by the dispatcher as a safety net:
-
-1. Dispatch the codex / long agent in background.
-2. Immediately arm `ScheduleWakeup` with `delaySeconds` matched to expected duration (e.g. 1200s = 20min for a typical 30-60min codex run).
-3. The wakeup `prompt` MUST instruct the wakeup turn to:
-   - `ps aux | grep <process-pattern>` — is it alive?
-   - `tail -40 <run.log>` — is it making progress (new output since last check)?
-   - `ls <expected-output-dir>` and `git log --oneline -5` — are artifacts landing?
-   - Then act: re-arm if progressing, resume if dead, dispatch next step if done, escalate if stuck.
-4. The wakeup MUST always re-arm itself with another `ScheduleWakeup` until the goal is met.
-5. Match poll cadence to expected duration (20-30min for codex; 5-10min for shorter tasks). Don't poll aggressively; wasted turns cost tokens.
-
-### The agent-spawns-codex parent-rest trap
-
-If an agent dispatches a sub-codex or sub-bash in background, the agent's `task-notification` fires when the AGENT comes to rest — which happens BEFORE the child completes if the agent doesn't actively await it. Then the child finishes; nothing wakes the agent; parent (you) never gets a follow-up notification.
-
-**Mitigation:** prefer dispatching codex DIRECTLY from your main session rather than through an agent layer. If a sub-agent must spawn codex, the sub-agent's prompt MUST instruct it to wait synchronously (poll its own child via `ps` in an until-loop) until the child completes — not "come to rest while waiting."
+The `codex-cli` skill owns background execution and completion handling. Follow it instead of creating a polling loop, scheduled wake-up, or waiter for Codex. This reference keeps the PWA-specific goals-only, path ownership, and screenshot review practices below.
 
 ## One-owner-per-path (multi-agent runs)
 
